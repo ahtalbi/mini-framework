@@ -10,5 +10,5 @@ so to make frame work we should now that they need to be rules so we can't miss 
 
 They told us in this project we need framwork and also example of a todo app
 
-1 - Router to handle the spa
-2 - parsing the html if we are gonna use (virtual dom)
+1 - File Base Routing
+2 - Jsx

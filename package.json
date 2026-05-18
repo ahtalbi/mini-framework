@@ -1,17 +1,9 @@
 {
-    "name": "mini-framwork",
-    "version": 0.1,
-    "description": "mini-framwork is a project we did make to practice the virtual dom and knowing how to make our own frame work",
-    "main": "./dist/script.js",
-    "authors": ["ahtalbi", "monouri", "otbenbm"],
-    "scripts": {
-        "build": "babel src -d dist",
-        "start": "node ./framework/script.js"
-        
-    },
-    "devDependencies": {
-        "@babel/cli": "^7.28.6",
-        "@babel/core": "^7.29.0",
-        "@babel/preset-env": "^7.29.5"
-    }
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-transform-react-jsx": "^7.28.6",
+    "@babel/preset-env": "^7.29.5",
+    "@babel/preset-react": "^7.28.5"
+  }
 }
