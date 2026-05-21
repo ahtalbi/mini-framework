@@ -193,6 +193,11 @@ class ExternalModuleFactoryPlugin {
 
 						dependencyMeta = {
 							attributes: dependency.attributes,
+							phase:
+								dependency instanceof HarmonyImportDependency ||
+								dependency instanceof ImportDependency
+									? dependency.phase
+									: undefined,
 							externalType
 						};
 					} else if (dependency instanceof CssImportDependency) {

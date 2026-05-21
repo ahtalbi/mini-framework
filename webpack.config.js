@@ -1,11 +1,32 @@
 const path = require('path');
 
 module.exports = {
-  mode: 'development',   // or 'production' when ready
-  entry: './examples/todo/src/app.js',  // your main JS file
+  mode: 'development',
+  entry: './examples/todo/src/app.js',
   output: {
-    filename: 'bundle.js',           // output file
-    path: path.resolve(__dirname, 'dist'), // output folder
+    filename: 'script.js',
+    path: path.resolve(__dirname, 'examples/todo/dist'),
   },
-  devtool: 'inline-source-map',      // helpful for debugging
+  devtool: 'inline-source-map', // helpful for debugging in devtools browser sitemap of js not single file
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            plugins: [
+              ["@babel/plugin-transform-react-jsx", {
+                pragma: "createElement",
+              }]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".js", ".jsx"]
+  }
 };

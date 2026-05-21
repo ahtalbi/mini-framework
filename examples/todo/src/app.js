@@ -1,8 +1,10 @@
-import router from "../../../framework/mini-framework.js";
+import { createElement, render } from "../../../framework/dom";
+import router from "../../../framework/mini-framework";
+import Helloworld from "./components/helloworld";
 
 router.on("/", () => {
     let root = document.querySelector("#root");
-    root.innerHTML = "hello world";
+    render(<Helloworld />, root);
 });
 
-router.listen(() => {alert("404")})
+router.listen(() => {alert("404")});
