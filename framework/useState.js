@@ -1,40 +1,56 @@
-let state
+const hooks = []
+let hookIndex = 0
 
 function useState(initialState) {
-    state =  initialState
-    
-    function setState(newState) {
-        state = newState
-        updateState()
+    const currentIndex = hookIndex
+
+    if (hooks[currentIndex] === undefined) {
+        hooks[currentIndex] = initialState
     }
 
-    return [state, setState]
+    function setState(value) {
+        hooks[currentIndex] =
+            typeof value === "function"
+                ? value(hooks[currentIndex])
+                : value
+
+        Render()
+    }
+
+    hookIndex++
+
+    return [
+        hooks[currentIndex],
+        setState
+    ]
 }
 
 function createComponent() {
     const [count, setCount] = useState(0)
-    window.increment = () => setCount(state + 1)
-    window.decrement = () => setCount(state - 1)
+    const [name, setName] = useState("Ahmed")
+
+    window.increment = () => {
+        setCount(prev => prev + 1)
+        setName(() => "Simo")
+    }
+
+    window.decrement = () => {
+        setCount(prev => prev - 1)
+        setName(() => "Othmane")
+    }
 
     return `
-        <div>
-            <div> chi l3iba<p>Current Count: <p id="count-value">${count}</p></p></div>
-            <button onclick="increment()">Increment</button>
-            <button onclick="decrement()">Decrement</button>
-        </div>
-    `;
-}
-
-function updateState() {
-    const countSpan = document.getElementById('count-value')
-    if (countSpan) {
-        countSpan.textContent = state
-    }
+    ${count}
+    ${name}
+    <br><br>
+  `
 }
 
 function Render() {
-    const appDiv = document.getElementById('app')
-    appDiv.innerHTML = createComponent()
+    hookIndex = 0
+
+    document.getElementById("app").innerHTML =
+        createComponent()
 }
 
 Render()
