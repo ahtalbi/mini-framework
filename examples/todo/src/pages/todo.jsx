@@ -6,12 +6,12 @@ function TodoMVC() {
     return (
         <section class="todoapp">
             <Header />
-            <main class="main" data-testid="main">
+            <main class="main">
                 <div class="toggle-all-container">
-                    <input class="toggle-all" type="checkbox" id="toggle-all" data-testid="toggle-all" />
+                    <input class="toggle-all" type="checkbox" id="toggle-all" />
                     <label class="toggle-all-label" for="toggle-all">Toggle All Input</label>
                 </div>
-                <ul class="todo-list" data-testid="todo-list"></ul>
+                <ul class="todo-list"></ul>
             </main>
             <Footer />
         </section>
