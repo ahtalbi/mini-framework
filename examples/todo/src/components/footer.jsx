@@ -2,9 +2,9 @@ import { createElement } from "../../../../framework/dom";
 
 function Footer() {
     return (
-        <footer class="footer" data-testid="footer">
+        <footer class="footer">
             <span class="todo-count">0 items left</span>
-            <ul class="filters" data-testid="footer-navigation">
+            <ul class="filters">
                 <li>
                     <a href="#/">All</a>
                 </li>

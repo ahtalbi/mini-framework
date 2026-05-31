@@ -8,19 +8,20 @@ function TodoItem(todo) {
     ].filter(Boolean).join(" ");
 
     const item = (
-        <li class={classes} data-testid="todo-item" data-id={id}>
+        <li class={classes}>
             <div class="view">
-                <input class="toggle" type="checkbox" data-testid="todo-item-toggle" />
-                <label data-testid="todo-item-label">
+                <input class="toggle" type="checkbox" />
+                <label>
                     {title}
                 </label>
-                <button class="destroy" data-testid="todo-item-button" type="button" />
+                <button class="destroy" type="button" />
             </div>
-            <input class="edit" data-testid="todo-item-edit" value={title} />
+            <input class="edit" value={title} />
         </li>
     );
 
     item.querySelector(".toggle").checked = completed;
+    item.todoId = id;
     return item;
 }
 
