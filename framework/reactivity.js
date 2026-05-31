@@ -1,13 +1,13 @@
 const effectStack = [];
-let activEffect = null;
+let activeEffect = null;
 
 export function createSignal(initialValue) {
    let value = initialValue;
    const effects = new Set();
 
    const Read = () => {
-      if (activEffect) {
-         effects.add(activEffect);
+      if (activeEffect) {
+         effects.add(activeEffect);
       }
       return value;
    }
@@ -22,8 +22,8 @@ export function createSignal(initialValue) {
 
 export function createEffect(effect) {
    effectStack.push(effect);
-   activEffect = effect;
+   activeEffect = effect;
    effect();
    effectStack.pop();
-   activEffect = effectStack[effectStack.length - 1] || null;
+   activeEffect = effectStack[effectStack.length - 1] || null;
 }

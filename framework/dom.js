@@ -3,12 +3,15 @@ export function createElement(type, props, ...children) {
         return type({ ...(props || {}), children });
     }
 
-    if (type instanceof HTMLElement) return type;
-    let ele = document.createElement(type);
-    for (let key in props || {}) {
+    const ele = document.createElement(type);
+
+    for (const key in props || {}) {
         ele.setAttribute(key, props[key]);
     }
-    ele.append(...children);
+
+    const flatChildren = children.flat(Infinity);
+    ele.append( ...flatChildren.filter( child => child !== null && child !== undefined && child !== false));
+
     return ele;
 }
 
