@@ -1,29 +1,48 @@
 const effectStack = [];
-let activEffect = null;
+let activeEffect = null;
 
 export function createSignal(initialValue) {
    let value = initialValue;
    const effects = new Set();
 
    const Read = () => {
-      if (activEffect) {
-         effects.add(activEffect);
+      if (activeEffect) {
+         effects.add(activeEffect);
+         activeEffect.deps.add(effects);
       }
       return value;
    }
 
    const Write = (newValue) => {
       value = newValue;
-      effects.forEach(effect => effect());
+      const effectsCopy = new Set(effects);
+
+      effectsCopy.forEach(effectObj => effectObj.execute());
    }
 
    return [Read, Write];
 }
 
 export function createEffect(effect) {
-   effectStack.push(effect);
-   activEffect = effect;
-   effect();
-   effectStack.pop();
-   activEffect = effectStack[effectStack.length - 1] || null;
+   const currentEffect = {
+      execute: () => {
+         Cleanup(currentEffect);
+         effectStack.push(currentEffect);
+         activeEffect = currentEffect;
+         effect();
+         effectStack.pop();
+         activeEffect = effectStack[effectStack.length - 1] || null;
+      },
+      deps: new Set()
+   } 
+   currentEffect.execute()
+
+
+}
+
+export function Cleanup(effectObj) {
+   for (const signal of effectObj.deps) {
+      signal.delete(effectObj);
+   }
+   effectObj.deps.clear()
 }
