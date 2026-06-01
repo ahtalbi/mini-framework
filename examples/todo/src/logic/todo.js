@@ -30,7 +30,6 @@ const counts = () => {
 };
 
 let lastActiveCount = null;
-let lastCompletedCount = null;
 let lastTotalCount = null;
 let lastRenderedRoute = null;
 
@@ -46,6 +45,7 @@ function renderStatus() {
     if (lastTotalCount !== total) {
         app.querySelector(".main").classList.toggle("hidden", !total);
         app.querySelector(".footer").classList.toggle("hidden", !total);
+        app.querySelector(".clear-completed").classList.toggle("hidden", !total);
         lastTotalCount = total;
     }
 
@@ -57,11 +57,6 @@ function renderStatus() {
             ` ${active === 1 ? "item" : "items"} left`
         );
         lastActiveCount = active;
-    }
-
-    if (lastCompletedCount !== completed) {
-        app.querySelector(".clear-completed").classList.toggle("hidden", !completed);
-        lastCompletedCount = completed;
     }
 
     if (lastRenderedRoute !== route) {
@@ -138,7 +133,6 @@ export function mountTodoApp() {
 
         cleanups.forEach((done) => done());
         lastActiveCount = null;
-        lastCompletedCount = null;
         lastTotalCount = null;
         lastRenderedRoute = null;
         lastRenderedItems = null;
