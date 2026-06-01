@@ -48,6 +48,10 @@ function renderStatus() {
         app.querySelector(".clear-completed").classList.toggle("hidden", !total);
         lastTotalCount = total;
     }
+    app.querySelector(".toggle-all-container").classList.toggle(
+        "hidden",
+        (route === "active" && active === 0) || (route === "completed" && completed === 0)
+    );
     app.querySelector(".toggle-all").checked = total && !active;
 
     if (lastActiveCount !== active) {
