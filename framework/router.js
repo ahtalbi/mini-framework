@@ -26,11 +26,12 @@ export class Router {
     listen(onError404) {
         navigation.addEventListener("navigate", (event) => {
             const url = new URL(event.destination.url);
+            if (url.pathname === location.pathname && url.search === location.search) {
+                return;
+            }
             
             event.intercept({
                 handler: () => {
-                    console.log(url.pathname, this.#Routes);
-
                     const fn = this.#Routes[url.pathname];
                     if (!fn) {
                         onError404();

@@ -3,50 +3,36 @@ import TodoItem from "../components/todo-item";
 import { on } from "./events";
 import { createSignal, createEffect } from "../../../../framework/reactivity";
 
-const useState = createSignal;
-const [getTodos, rawSetTodos] = useState([]);
-const [getEditing, rawSetEditing] = useState(null);
+const [getTodos, rawSetTodos] = createSignal([]);
+const [getEditing, rawSetEditing] = createSignal(null);
 
-const normalizeRoute = (value) => {
-    const raw = String(value || "");
-    const route = raw.replace(/^#\/?/, "").replace(/\/+$/, "");
+const normalizeRoute = (hash) => {
+    const route = String(hash || "").replace(/^#\/?/, "").replace(/\/+$/, "");
     return route === "" ? "all" : route;
 };
 
-const [getRoute, rawSetRoute] = useState(normalizeRoute(location.hash));
-
-const setTodos = (next) => {
-    const current = getTodos();
-    if (next === current) return;
-    if (Array.isArray(next) && Array.isArray(current) &&
-        next.length === current.length &&
-        next.every((item, idx) => item === current[idx])) {
-        return;
-    }
-    rawSetTodos(next);
-};
-
-const setEditing = (next) => {
-    if (next === getEditing()) return;
-    rawSetEditing(next);
-};
-
-const setRoute = (next) => {
-    const nextRoute = normalizeRoute(next);
-    if (nextRoute === getRoute()) return;
-    rawSetRoute(nextRoute);
-};
-
-let cleanups = [];
+const [getRoute, rawSetRoute] = createSignal(normalizeRoute(location.hash));
 
 const idOf = (el) => el.closest("li").todoId;
-const route = () => getRoute();
-const shown = () => getTodos().filter((todo) => route() === "active" ? !todo.completed : route() === "completed" ? todo.completed : true);
+
+const shown = () => {
+    const route = getRoute();
+    const todos = getTodos();
+    if (route === "active") return todos.filter(t => !t.completed);
+    if (route === "completed") return todos.filter(t => t.completed);
+    return todos;
+};
+
 const counts = () => {
     const todos = getTodos();
     const active = todos.filter((todo) => !todo.completed).length;
     return { active, completed: todos.length - active };
 };
+
+let lastActiveCount = null;
+let lastCompletedCount = null;
+let lastTotalCount = null;
+let lastRenderedRoute = null;
 
 function renderStatus() {
     const app = document.querySelector(".todoapp");
@@ -54,28 +40,42 @@ function renderStatus() {
 
     const todos = getTodos();
     const { active, completed } = counts();
+    const total = todos.length;
+    const route = getRoute();
 
-    app.querySelector(".main").classList.toggle("hidden", !todos.length);
-    app.querySelector(".footer").classList.toggle("hidden", !todos.length);
-    app.querySelector(".toggle-all").checked = todos.length && !active;
-    app.querySelector(".todo-count").replaceChildren(
-        createElement("strong", null, String(active)),
-        ` ${active === 1 ? "item" : "items"} left`
-    );
-    app.querySelector(".clear-completed").classList.toggle("hidden", !todos.length);
-    app.querySelectorAll(".filters a").forEach((link) => {
-        const filter = normalizeRoute(link.getAttribute("href"));
-        link.classList.toggle("selected", filter === route());
-    });
+    if (lastTotalCount !== total) {
+        app.querySelector(".main").classList.toggle("hidden", !total);
+        app.querySelector(".footer").classList.toggle("hidden", !total);
+        lastTotalCount = total;
+    }
+
+    app.querySelector(".toggle-all").checked = total && !active;
+
+    if (lastActiveCount !== active) {
+        app.querySelector(".todo-count").replaceChildren(
+            createElement("strong", null, String(active)),
+            ` ${active === 1 ? "item" : "items"} left`
+        );
+        lastActiveCount = active;
+    }
+
+    if (lastCompletedCount !== completed) {
+        app.querySelector(".clear-completed").classList.toggle("hidden", !completed);
+        lastCompletedCount = completed;
+    }
+
+    if (lastRenderedRoute !== route) {
+        app.querySelectorAll(".filters a").forEach((link) => {
+            const filter = normalizeRoute(link.getAttribute("href"));
+            link.classList.toggle("selected", filter === route);
+        });
+        lastRenderedRoute = route;
+    }
 }
 
 function toggleOne(input) {
     const id = idOf(input);
-    const todos = getTodos();
-    const todo = todos.find((item) => item.id === id);
-    if (!todo) return;
-
-    setTodos(todos.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
+    rawSetTodos(getTodos().map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
 }
 
 function saveEdit(input) {
@@ -84,36 +84,41 @@ function saveEdit(input) {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
 
-    const newTitle = input.value.trim();
-    setEditing(null);
+    const title = input.value.trim();
+    rawSetEditing(null);
 
-    if (!newTitle || newTitle === todo.title) {
-        return;
+    if (!title) {
+        rawSetEditing(null);
+    } else if (title !== todo.title) {
+        rawSetTodos(todos.map((t) => t.id === id ? { ...t, title } : t));
     }
-
-    setTodos(todos.map((t) => t.id === id ? { ...t, title: newTitle } : t));
 }
 
-let lastRenderedRoute = null;
-let lastRenderedCount = null;
+let lastRenderedItems = null;
 
 function renderTodoList() {
     const app = document.querySelector(".todoapp");
     if (!app) return;
 
-    const currentRoute = route();
-    const currentCount = shown().length;
-    
-    if (lastRenderedRoute === currentRoute && lastRenderedCount === currentCount) {
+    const editing = getEditing();
+    const currentItems = shown().map((todo) => ({ ...todo, editing: editing === todo.id }));
+
+    if (
+        lastRenderedItems &&
+        lastRenderedItems.length === currentItems.length &&
+        lastRenderedItems.every((item, idx) =>
+            item.id === currentItems[idx].id &&
+            item.title === currentItems[idx].title &&
+            item.completed === currentItems[idx].completed &&
+            item.editing === currentItems[idx].editing
+        )
+    ) {
         return;
     }
-    
-    lastRenderedRoute = currentRoute;
-    lastRenderedCount = currentCount;
 
-    const editing = getEditing();
+    lastRenderedItems = currentItems;
     const list = app.querySelector(".todo-list");
-    list.replaceChildren(...shown().map((todo) => TodoItem({ ...todo, editing: editing === todo.id })));
+    list.replaceChildren(...currentItems.map((todo) => TodoItem(todo)));
 
     const edit = list.querySelector(".editing .edit");
     if (edit) edit.focus();
@@ -124,49 +129,63 @@ export function renderTodoApp() {
     renderStatus();
 }
 
+let cleanups = [];
+
 export function mountTodoApp() {
     queueMicrotask(() => {
         const app = document.querySelector(".todoapp");
         if (!app) return;
 
         cleanups.forEach((done) => done());
+        lastActiveCount = null;
+        lastCompletedCount = null;
+        lastTotalCount = null;
+        lastRenderedRoute = null;
+        lastRenderedItems = null;
 
-        function onHashChange() {
-            setRoute(normalizeRoute(location.hash));
-        }
+        const onHashChange = () => {
+            const nextRoute = normalizeRoute(location.hash);
+            if (nextRoute !== getRoute()) {
+                rawSetRoute(nextRoute);
+            }
+        };
 
         const handleClickOutsideEdit = (event) => {
-            if (getEditing() === null) return;
-            if (event.target.closest(".edit")) return;
-            if (event.target.closest(".editing")) return;
-            setEditing(null);
+            if (getEditing() !== null && !event.target.closest(".edit") && !event.target.closest(".editing")) {
+                rawSetEditing(null);
+            }
         };
 
         cleanups = [
             on(app, "keydown", ".new-todo", (event, input) => {
                 const title = input.value.trim();
-                if (event.key !== "Enter" || !title) return;
-                setTodos(getTodos().concat({ id: String(Date.now()), title, completed: false }));
-                input.value = "";
+                if (event.key === "Enter" && title) {
+                    rawSetTodos(getTodos().concat({ id: String(Date.now()), title, completed: false }));
+                    input.value = "";
+                }
             }),
-            on(app, "change", ".toggle-all", (event, input) => setTodos(getTodos().map((todo) => ({ ...todo, completed: input.checked })))),
+            on(app, "change", ".toggle-all", (event, input) => {
+                rawSetTodos(getTodos().map((todo) => ({ ...todo, completed: input.checked })));
+            }),
             on(app, "change", ".todo-list .toggle", (event, input) => toggleOne(input)),
             on(app, "click", ".destroy", (event, button) => {
-                if (getEditing() !== null) setEditing(null);
-                setTodos(getTodos().filter((todo) => todo.id !== idOf(button)));
+                if (getEditing() !== null) rawSetEditing(null);
+                rawSetTodos(getTodos().filter((todo) => todo.id !== idOf(button)));
             }),
             on(app, "dblclick", ".todo-list label", (event, label) => {
-                setEditing(idOf(label));
+                rawSetEditing(idOf(label));
             }),
             on(app, "keydown", ".edit", (event, input) => {
                 if (event.key === "Enter") saveEdit(input);
-                if (event.key === "Escape") {
-                    setEditing(null);
-                }
+                if (event.key === "Escape") rawSetEditing(null);
             }),
-            on(app, "blur", ".edit", (event, input) => input.closest(".editing") && setEditing(null)),
+            on(app, "focusout", ".edit", (event, input) => {
+                if (input.closest(".editing")) rawSetEditing(null);
+            }),
             on(app, "click", ".todo-list", handleClickOutsideEdit),
-            on(app, "click", ".clear-completed", () => setTodos(getTodos().filter((todo) => !todo.completed))),
+            on(app, "click", ".clear-completed", () => {
+                rawSetTodos(getTodos().filter((todo) => !todo.completed));
+            }),
             () => {
                 window.removeEventListener("hashchange", onHashChange);
                 app.removeEventListener("click", handleClickOutsideEdit);
