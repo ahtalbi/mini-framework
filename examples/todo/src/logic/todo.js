@@ -80,11 +80,15 @@ function saveEdit(input) {
     if (!todo) return;
 
     const title = input.value.trim();
+
+    if (title.length < 2) {
+        input.focus();
+        return;
+    }
+
     rawSetEditing(null);
 
-    if (!title) {
-        rawSetEditing(null);
-    } else if (title !== todo.title) {
+    if (title !== todo.title) {
         rawSetTodos(todos.map((t) => t.id === id ? { ...t, title } : t));
     }
 }
@@ -153,7 +157,7 @@ export function mountTodoApp() {
         cleanups = [
             on(app, "keydown", ".new-todo", (event, input) => {
                 const title = input.value.trim();
-                if (event.key === "Enter" && title) {
+                if (event.key === "Enter" && title.length >= 2) {
                     rawSetTodos(getTodos().concat({ id: String(Date.now()), title, completed: false }));
                     input.value = "";
                 }
