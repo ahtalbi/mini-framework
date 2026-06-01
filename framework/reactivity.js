@@ -14,7 +14,7 @@ export function createSignal(initialValue) {
    }
 
    const Write = (newValue) => {
-      if (value === newValue) return;
+
       value = newValue;
       const effectsCopy = new Set(effects);
 
