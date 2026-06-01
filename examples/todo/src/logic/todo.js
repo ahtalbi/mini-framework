@@ -11,6 +11,8 @@ const normalizeRoute = (hash) => {
     return route === "" ? "all" : route;
 };
 
+const validRoute = (route) => route === "all" || route === "active" || route === "completed";
+
 const [getRoute, rawSetRoute] = createSignal(normalizeRoute(location.hash));
 
 const idOf = (el) => el.closest("li").todoId;
@@ -32,6 +34,17 @@ const counts = () => {
 let lastActiveCount = null;
 let lastTotalCount = null;
 let lastRenderedRoute = null;
+let lastValidRoute = validRoute(normalizeRoute(location.hash)) ? normalizeRoute(location.hash) : null;
+
+function focusFilter(route) {
+    if (!route) return;
+
+    document.querySelectorAll(".filters a").forEach((link) => {
+        if (normalizeRoute(link.getAttribute("href")) === route) {
+            link.focus();
+        }
+    });
+}
 
 function renderStatus() {
     const app = document.querySelector(".todoapp");
@@ -160,6 +173,11 @@ export function mountTodoApp() {
 
         const onHashChange = () => {
             const nextRoute = normalizeRoute(location.hash);
+            if (validRoute(nextRoute)) {
+                lastValidRoute = nextRoute;
+            } else {
+                queueMicrotask(() => focusFilter(lastValidRoute));
+            }
             if (nextRoute !== getRoute()) {
                 rawSetRoute(nextRoute);
             }
