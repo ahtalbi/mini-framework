@@ -30,9 +30,12 @@ export function createEffect(effect) {
          Cleanup(currentEffect);
          effectStack.push(currentEffect);
          activeEffect = currentEffect;
-         effect();
-         effectStack.pop();
-         activeEffect = effectStack[effectStack.length - 1] || null;
+         try {
+            effect();
+         } finally {
+            effectStack.pop();
+            activeEffect = effectStack[effectStack.length - 1] || null;
+         }
       },
       deps: new Set()
    }
