@@ -48,7 +48,6 @@ function renderStatus() {
         app.querySelector(".clear-completed").classList.toggle("hidden", !total);
         lastTotalCount = total;
     }
-
     app.querySelector(".toggle-all").checked = total && !active;
 
     if (lastActiveCount !== active) {
@@ -70,7 +69,18 @@ function renderStatus() {
 
 function toggleOne(input) {
     const id = idOf(input);
-    rawSetTodos(getTodos().map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
+    const li = input.closest("li");
+    const nowCompleted = input.checked;
+
+    li.classList.toggle("completed", nowCompleted);
+
+    if (lastRenderedItems) {
+        lastRenderedItems = lastRenderedItems.map((item) =>
+            item.id === id ? { ...item, completed: nowCompleted } : item
+        );
+    }
+
+    rawSetTodos(getTodos().map((t) => t.id === id ? { ...t, completed: nowCompleted } : t));
 }
 
 function saveEdit(input) {
@@ -120,7 +130,10 @@ function renderTodoList() {
     list.replaceChildren(...currentItems.map((todo) => TodoItem(todo)));
 
     const edit = list.querySelector(".editing .edit");
-    if (edit) edit.focus();
+    if (edit) {
+        edit.focus();
+        edit.select();
+    }
 }
 
 export function renderTodoApp() {
