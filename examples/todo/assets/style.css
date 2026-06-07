@@ -189,6 +189,7 @@ body {
 .todo-list li.editing {
   border-bottom: none;
   padding: 0;
+  border: 2px solid #d9534f;
 }
 
 .todo-list li.editing .edit {
@@ -196,6 +197,9 @@ body {
   margin: 0 0 0 43px;
   padding: 12px 16px;
   width: calc(100% - 43px);
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .todo-list li.editing .view {

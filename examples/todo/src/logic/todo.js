@@ -11,6 +11,8 @@ const normalizeRoute = (hash) => {
     return route === "" ? "all" : route;
 };
 
+const validRoute = (route) => route === "all" || route === "active" || route === "completed";
+
 const [getRoute, rawSetRoute] = createSignal(normalizeRoute(location.hash));
 
 const idOf = (el) => el.closest("li").todoId;
@@ -32,6 +34,17 @@ const counts = () => {
 let lastActiveCount = null;
 let lastTotalCount = null;
 let lastRenderedRoute = null;
+let lastValidRoute = validRoute(normalizeRoute(location.hash)) ? normalizeRoute(location.hash) : null;
+
+function focusFilter(route) {
+    if (!route) return;
+
+    document.querySelectorAll(".filters a").forEach((link) => {
+        if (normalizeRoute(link.getAttribute("href")) === route) {
+            link.focus();
+        }
+    });
+}
 
 function renderStatus() {
     const app = document.querySelector(".todoapp");
@@ -48,7 +61,10 @@ function renderStatus() {
         app.querySelector(".clear-completed").classList.toggle("hidden", !total);
         lastTotalCount = total;
     }
-
+    app.querySelector(".toggle-all-container").classList.toggle(
+        "hidden",
+        (route === "active" && active === 0) || (route === "completed" && completed === 0)
+    );
     app.querySelector(".toggle-all").checked = total && !active;
 
     if (lastActiveCount !== active) {
@@ -70,7 +86,18 @@ function renderStatus() {
 
 function toggleOne(input) {
     const id = idOf(input);
-    rawSetTodos(getTodos().map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
+    const li = input.closest("li");
+    const nowCompleted = input.checked;
+
+    li.classList.toggle("completed", nowCompleted);
+
+    if (lastRenderedItems) {
+        lastRenderedItems = lastRenderedItems.map((item) =>
+            item.id === id ? { ...item, completed: nowCompleted } : item
+        );
+    }
+
+    rawSetTodos(getTodos().map((t) => t.id === id ? { ...t, completed: nowCompleted } : t));
 }
 
 function saveEdit(input) {
@@ -80,11 +107,15 @@ function saveEdit(input) {
     if (!todo) return;
 
     const title = input.value.trim();
+
+    if (title.length < 2) {
+        input.focus();
+        return;
+    }
+
     rawSetEditing(null);
 
-    if (!title) {
-        rawSetEditing(null);
-    } else if (title !== todo.title) {
+    if (title !== todo.title) {
         rawSetTodos(todos.map((t) => t.id === id ? { ...t, title } : t));
     }
 }
@@ -116,7 +147,10 @@ function renderTodoList() {
     list.replaceChildren(...currentItems.map((todo) => TodoItem(todo)));
 
     const edit = list.querySelector(".editing .edit");
-    if (edit) edit.focus();
+    if (edit) {
+        edit.focus();
+        edit.select();
+    }
 }
 
 export function renderTodoApp() {
@@ -139,6 +173,11 @@ export function mountTodoApp() {
 
         const onHashChange = () => {
             const nextRoute = normalizeRoute(location.hash);
+            if (validRoute(nextRoute)) {
+                lastValidRoute = nextRoute;
+            } else {
+                queueMicrotask(() => focusFilter(lastValidRoute));
+            }
             if (nextRoute !== getRoute()) {
                 rawSetRoute(nextRoute);
             }
@@ -153,7 +192,7 @@ export function mountTodoApp() {
         cleanups = [
             on(app, "keydown", ".new-todo", (event, input) => {
                 const title = input.value.trim();
-                if (event.key === "Enter" && title) {
+                if (event.key === "Enter" && title.length >= 2) {
                     rawSetTodos(getTodos().concat({ id: String(Date.now()), title, completed: false }));
                     input.value = "";
                 }
